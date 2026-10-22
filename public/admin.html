@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b16">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Developer Portal — Hendy Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/config.js"></script>
+  <script defer src="/admin.js"></script>
+</head>
+<body class="admin-body">
+  <div class="admin-bg-glow"></div>
+  <section class="login-stage" id="login-stage">
+    <a class="brand login-brand" href="/"><span class="brand-mark"><span></span><span></span><span></span><span></span></span><span class="brand-copy"><b>HENDY<span>HUB</span></b><small>DEVELOPER CONSOLE</small></span></a>
+    <div class="login-card">
+      <div class="login-lock">⌘</div><div class="section-kicker">RESTRICTED ACCESS <span>AUTH / 01</span></div>
+      <h1>Welcome back<span class="title-dot">.</span></h1><p class="login-desc">Đăng nhập để quản lý ứng dụng, tải lên build và xuất bản phiên bản mới.</p>
+      <form id="login-form" class="stack-form">
+        <label for="username">TÊN ĐĂNG NHẬP</label><input id="username" name="username" type="text" autocomplete="username" placeholder="Developer username" required>
+        <label for="password">MẬT KHẨU</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
+        <button class="button button-primary login-submit" type="submit">Xác thực truy cập <span>↗</span></button>
+        <p class="form-message" id="login-message" role="alert"></p>
+      </form>
+      <div class="login-security"><span>◈</span> Secure session <span class="security-divider">/</span> HttpOnly cookie</div>
+    </div>
+    <a class="back-home" href="/">← Quay lại giao diện người dùng</a>
+  </section>
+
+  <div class="admin-shell" id="admin-shell" hidden>
+    <aside class="admin-sidebar">
+      <a class="brand admin-brand" href="/admin.html"><span class="brand-mark"><span></span><span></span><span></span><span></span></span><span class="brand-copy"><b>HENDY<span>HUB</span></b><small>DEVELOPER CONSOLE</small></span></a>
+      <div class="sidebar-workspace"><span class="workspace-icon">H</span><span><b>Developer workspace</b><small>Production environment</small></span><i></i></div>
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <button class="admin-nav-item is-active" data-page="overview"><span>▦</span> Tổng quan <kbd>01</kbd></button>
+        <button class="admin-nav-item" data-page="apps"><span>◈</span> Ứng dụng <kbd>02</kbd></button>
+        <button class="admin-nav-item" data-page="builds"><span>⌘</span> Bản build <kbd>03</kbd></button>
+        <button class="admin-nav-item" data-page="licenses"><span>⚿</span> License <kbd>04</kbd></button>
+        <button class="admin-nav-item" data-page="audit"><span>≋</span> Nhật ký hoạt động <kbd>05</kbd></button>
+      </nav>
+      <div class="sidebar-bottom"><div class="sidebar-health"><i></i><span><b>API STATUS</b><small>Connected securely</small></span></div><a href="/" class="sidebar-public-link">↗ Xem giao diện người dùng</a><button id="logout-button" class="logout-button">⇥ Đăng xuất</button></div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar"><div class="breadcrumb"><span>WORKSPACE</span><b>/</b><strong id="breadcrumb-current">Tổng quan</strong></div><div class="admin-top-actions"><span class="status-pill"><i></i> PRODUCTION</span><span class="admin-avatar" id="admin-avatar">D</span><span class="admin-user-label"><b id="admin-user">Developer</b><small>Administrator</small></span></div></header>
+      <div class="admin-content">
+        <section class="admin-page is-current" id="page-overview">
+          <div class="admin-page-heading"><div><div class="section-kicker">CONTROL CENTER <span>01 / 05</span></div><h1>Chào mừng trở lại<span class="title-dot">.</span></h1><p>Đây là tình trạng hiện tại của hệ thống phân phối phần mềm.</p></div><button class="button button-ghost" id="refresh-overview">↻ Làm mới dữ liệu</button></div>
+          <div class="overview-grid" id="overview-stats"><div class="overview-stat"><small>APPLICATIONS</small><strong>—</strong><span>Đang tải dữ liệu</span></div><div class="overview-stat"><small>RELEASES</small><strong>—</strong><span>Đang tải dữ liệu</span></div><div class="overview-stat"><small>TOTAL DOWNLOADS</small><strong>—</strong><span>Đang tải dữ liệu</span></div><div class="overview-stat"><small>ACTIVE LICENSES</small><strong>—</strong><span>Đang tải dữ liệu</span></div></div>
+          <div class="admin-panel overview-lower"><div class="panel-heading"><div><div class="section-kicker">RECENT ACTIVITY</div><h2>Hoạt động gần đây</h2></div><button class="quiet-button" data-goto="audit">Tất cả nhật ký ↗</button></div><div id="recent-activity" class="activity-list"><div class="empty-state">Đang tải hoạt động...</div></div></div>
+          <div class="admin-panel quick-actions"><div class="panel-heading"><div><div class="section-kicker">QUICK ACTIONS</div><h2>Bắt đầu nhanh</h2></div></div><div class="quick-action-grid"><button data-goto="apps"><span>＋</span><b>Tạo ứng dụng</b><small>Đăng ký project mới</small><i>↗</i></button><button data-goto="builds"><span>⇧</span><b>Tải bản build</b><small>Thêm gói phát hành</small><i>↗</i></button><button data-goto="licenses"><span>⚿</span><b>Tạo license</b><small>Cấp quyền sử dụng</small><i>↗</i></button></div></div>
+        </section>
+
+        <section class="admin-page" id="page-apps">
+          <div class="admin-page-heading"><div><div class="section-kicker">APPLICATION MANAGEMENT <span>02 / 05</span></div><h1>Ứng dụng<span class="title-dot">.</span></h1><p>Tạo project, cập nhật thông tin và kiểm soát trạng thái công khai.</p></div><button class="button button-primary" id="open-create-app">＋ Tạo ứng dụng</button></div>
+          <div class="admin-panel form-panel" id="create-app-panel" hidden><div class="panel-heading"><div><div class="section-kicker">NEW APPLICATION</div><h2>Tạo project mới</h2></div><button class="icon-button" id="close-create-app" aria-label="Đóng">×</button></div><form id="create-app-form" class="form-grid"><div class="field"><label for="app-name">TÊN ỨNG DỤNG *</label><input id="app-name" name="name" placeholder="Ví dụ: Hendy Tools" required minlength="2" maxlength="100"></div><div class="field"><label for="app-category">DANH MỤC</label><select id="app-category" name="category"><option>Tools</option><option>Productivity</option><option>Developer</option><option>Media</option><option>Utilities</option><option>Other</option></select></div><div class="field field-full"><label for="app-description">MÔ TẢ</label><textarea id="app-description" name="description" rows="3" maxlength="1000" placeholder="Mô tả ngắn chức năng và đối tượng sử dụng..."></textarea></div><div class="field"><label for="app-website">WEBSITE (TÙY CHỌN)</label><input id="app-website" name="website" type="url" placeholder="https://example.com"></div><div class="field"><label for="app-icon">ICON URL (TÙY CHỌN)</label><input id="app-icon" name="icon" type="url" placeholder="https://..."></div><div class="field field-full form-actions"><button class="button button-primary" type="submit">Tạo ứng dụng <span>↗</span></button><span class="quiet-note">Ứng dụng mới sẽ ở trạng thái Draft cho đến khi có bản phát hành.</span></div></form></div>
+          <div class="admin-panel"><div class="panel-heading"><div><div class="section-kicker">PROJECT REGISTRY</div><h2>Danh sách ứng dụng</h2></div><span class="panel-count" id="apps-count">0 PROJECTS</span></div><div class="table-wrap"><table><thead><tr><th>ỨNG DỤNG</th><th>DANH MỤC</th><th>BUILD</th><th>TRẠNG THÁI</th><th>HÀNH ĐỘNG</th></tr></thead><tbody id="apps-table"><tr><td colspan="5" class="table-empty">Đang tải...</td></tr></tbody></table></div></div>
+        </section>
+
+        <section class="admin-page" id="page-builds">
+          <div class="admin-page-heading"><div><div class="section-kicker">RELEASE PIPELINE <span>03 / 05</span></div><h1>Bản build<span class="title-dot">.</span></h1><p>Tải gói cài đặt, kiểm tra checksum và xuất bản release.</p></div><button class="button button-primary" id="open-upload-build">⇧ Tải bản build</button></div>
+          <div class="admin-panel form-panel" id="upload-build-panel" hidden><div class="panel-heading"><div><div class="section-kicker">NEW RELEASE PACKAGE</div><h2>Upload package</h2></div><button class="icon-button" id="close-upload-build" aria-label="Đóng">×</button></div><form id="upload-build-form" class="form-grid"><div class="field field-full"><label for="build-app">ỨNG DỤNG *</label><select id="build-app" name="appId" required><option value="">Chọn project...</option></select></div><div class="field"><label for="build-version">VERSION *</label><input id="build-version" name="version" placeholder="1.0.0" required maxlength="40"></div><div class="field"><label for="build-platform">PLATFORM</label><select id="build-platform" name="platform"><option>Windows</option><option>Android</option><option>iOS</option><option>macOS</option><option>Linux</option><option>Web</option><option>Universal</option></select></div><div class="field"><label for="build-architecture">ARCHITECTURE</label><select id="build-architecture" name="architecture"><option>Universal</option><option>x64</option><option>arm64</option><option>x86</option><option>arm</option></select></div><div class="field"><label for="build-package">PACKAGE FILE *</label><input id="build-package" name="package" type="file" accept=".apk,.aab,.ipa,.zip,.7z,.rar,.exe,.msi,.dmg,.pkg,.appimage,.deb,.rpm,.tar,.gz" required><small class="field-hint">Định dạng được hỗ trợ; giới hạn dung lượng do máy chủ cấu hình.</small></div><div class="field field-full"><label for="build-notes">RELEASE NOTES</label><textarea id="build-notes" name="releaseNotes" rows="3" maxlength="3000" placeholder="Tính năng mới, bản sửa lỗi, thay đổi đáng chú ý..."></textarea></div><div class="field field-full form-actions"><button class="button button-primary" type="submit">Upload bản build <span>⇧</span></button><span class="quiet-note">Build được tải lên dưới dạng Draft. Chọn Publish sau khi xác minh.</span></div><div class="upload-progress" id="upload-progress" hidden><div><span id="upload-progress-label">Đang tải lên...</span><b id="upload-progress-percent">0%</b></div><div class="progress-track"><i id="upload-progress-bar"></i></div></div></form></div>
+          <div class="admin-panel"><div class="panel-heading"><div><div class="section-kicker">BUILD ARTIFACTS</div><h2>Release registry</h2></div><span class="panel-count" id="builds-count">0 BUILDS</span></div><div class="table-wrap"><table><thead><tr><th>PHIÊN BẢN / TỆP</th><th>ỨNG DỤNG</th><th>PLATFORM</th><th>CHECKSUM</th><th>TRẠNG THÁI</th><th>HÀNH ĐỘNG</th></tr></thead><tbody id="builds-table"><tr><td colspan="6" class="table-empty">Đang tải...</td></tr></tbody></table></div></div>
+        </section>
+
+        <section class="admin-page" id="page-licenses">
+          <div class="admin-page-heading"><div><div class="section-kicker">ACCESS CONTROL <span>04 / 05</span></div><h1>License manager<span class="title-dot">.</span></h1><p>Tạo và thu hồi mã license. API hỗ trợ kiểm tra trạng thái và thời hạn.</p></div><button class="button button-primary" id="open-create-license">＋ Tạo license</button></div>
+          <div class="admin-panel form-panel" id="create-license-panel" hidden><div class="panel-heading"><div><div class="section-kicker">ISSUE A LICENSE</div><h2>Cấp license mới</h2></div><button class="icon-button" id="close-create-license" aria-label="Đóng">×</button></div><form id="create-license-form" class="form-grid"><div class="field field-full"><label for="license-app">ÁP DỤNG CHO</label><select id="license-app" name="appId"><option value="">Tất cả ứng dụng</option></select></div><div class="field"><label for="license-expiry">NGÀY HẾT HẠN (TÙY CHỌN)</label><input id="license-expiry" name="expiresAt" type="date"></div><div class="field"><label for="license-activations">SỐ LƯỢT KÍCH HOẠT</label><input id="license-activations" name="maxActivations" type="number" min="1" max="100000" value="1" required></div><div class="field field-full form-actions"><button class="button button-primary" type="submit">Tạo mã license <span>↗</span></button></div></form></div>
+          <div class="admin-panel"><div class="panel-heading"><div><div class="section-kicker">LICENSE REGISTRY</div><h2>Danh sách license</h2></div><span class="panel-count" id="licenses-count">0 LICENSES</span></div><div class="table-wrap"><table><thead><tr><th>LICENSE KEY</th><th>ỨNG DỤNG</th><th>KÍCH HOẠT</th><th>HẾT HẠN</th><th>TRẠNG THÁI</th><th>HÀNH ĐỘNG</th></tr></thead><tbody id="licenses-table"><tr><td colspan="6" class="table-empty">Đang tải...</td></tr></tbody></table></div><p class="panel-footnote">Lưu ý: bản hiện tại cung cấp tạo/thu hồi và endpoint verify cơ bản; theo dõi activation theo thiết bị cần tích hợp thêm luồng activation riêng.</p></div>
+        </section>
+
+        <section class="admin-page" id="page-audit">
+          <div class="admin-page-heading"><div><div class="section-kicker">SYSTEM EVENTS <span>05 / 05</span></div><h1>Nhật ký hoạt động<span class="title-dot">.</span></h1><p>Các thao tác quản trị gần nhất được ghi lại trên máy chủ.</p></div><button class="button button-ghost" id="refresh-audit">↻ Làm mới</button></div>
+          <div class="admin-panel"><div class="panel-heading"><div><div class="section-kicker">AUDIT TRAIL</div><h2>Audit log</h2></div><span class="panel-count">LAST 200 EVENTS</span></div><div id="audit-list" class="activity-list"><div class="empty-state">Đang tải...</div></div></div>
+        </section>
+      </div>
+      <footer class="admin-footer"><span>HENDY HUB <b>DEVELOPER CONSOLE</b></span><span><i></i> API CONNECTED <span class="footer-separator">/</span> v1.0.0</span></footer>
+    </main>
+  </div>
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+</body>
+</html>

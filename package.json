@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node --check server.js && node --check public/script.js && node --check public/admin.js",
-    "test": "npm run check"
+    "test": "node --test && npm run check"
   },
   "engines": {
     "node": ">=20"

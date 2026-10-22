@@ -16,6 +16,7 @@ let licenseCode;
 test("App Downloader Server end-to-end smoke test", async function (t) {
   scratchDir = await fs.mkdtemp(path.join(os.tmpdir(), "app-downloader-test-"));
   process.env.NODE_ENV = "test";
+  process.env.STORAGE_DRIVER = "local";
   process.env.ADMIN_USERNAME = "test-developer";
   process.env.ADMIN_PASSWORD = "test-password-strong";
   process.env.SESSION_SECRET = "0123456789abcdef0123456789abcdef0123456789abcdef";

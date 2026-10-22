@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const multer = require("multer");
+const { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const fsSync = require("node:fs");
@@ -16,8 +17,15 @@ app.set("trust proxy", 1);
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
+const STORAGE_DRIVER = String(process.env.STORAGE_DRIVER || "local").toLowerCase();
 const DATA_FILE = path.resolve(process.env.DATA_FILE || path.join(ROOT, "data.json"));
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(ROOT, "uploads"));
+const R2_BUCKET = process.env.R2_BUCKET || "";
+const R2_ENDPOINT = process.env.R2_ENDPOINT || "";
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || "";
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || "";
+const R2_PREFIX = String(process.env.R2_PREFIX || "app-downloader-server").replace(/^\/+|\/+$/g, "");
+let r2Client = null;
 const MAX_UPLOAD_BYTES = Math.max(1, Number(process.env.MAX_UPLOAD_MB || 500)) * 1024 * 1024;
 const SESSION_COOKIE = "appdownloader_admin";
 const SESSION_HOURS = Math.min(72, Math.max(1, Number(process.env.SESSION_TTL_HOURS || 12)));
@@ -46,9 +54,61 @@ function cloneEmptyDb() {
   return JSON.parse(JSON.stringify(EMPTY_DB));
 }
 
+function isR2NotFound(error) {
+  return Boolean(error && (
+    error.name === "NoSuchKey" ||
+    error.name === "NotFound" ||
+    (error.$metadata && error.$metadata.httpStatusCode === 404)
+  ));
+}
+
+function getR2Client() {
+  if (STORAGE_DRIVER !== "r2") throw new Error("R2 storage is not enabled");
+  if (!R2_ENDPOINT || !R2_BUCKET || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    throw new Error("R2 storage requires R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY");
+  }
+  if (!r2Client) {
+    r2Client = new S3Client({
+      region: "auto",
+      endpoint: R2_ENDPOINT,
+      forcePathStyle: true,
+      credentials: { accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY }
+    });
+  }
+  return r2Client;
+}
+
+function r2ObjectKey(name) {
+  const safeName = String(name || "").replace(/^\/+/, "").split("/").filter(function (part) {
+    return part && part !== "." && part !== "..";
+  }).join("/");
+  return [R2_PREFIX, safeName].filter(Boolean).join("/");
+}
+
+async function readR2Object(key) {
+  try {
+    const response = await getR2Client().send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+    return await response.Body.transformToString("utf-8");
+  } catch (error) {
+    if (isR2NotFound(error)) return null;
+    throw error;
+  }
+}
+
 async function ensureStorage() {
-  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
+  if (STORAGE_DRIVER === "r2") {
+    const current = await readR2Object(r2ObjectKey("data.json"));
+    if (current === null) {
+      await persistDb(cloneEmptyDb());
+    } else {
+      const parsed = JSON.parse(current);
+      if (!parsed || typeof parsed !== "object") throw new Error("R2 data.json must contain a JSON object");
+    }
+    console.log("Persistent storage: Cloudflare R2 bucket " + R2_BUCKET);
+    return;
+  }
+  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
   try {
     await fs.access(DATA_FILE);
   } catch (error) {
@@ -60,7 +120,10 @@ async function ensureStorage() {
 async function readDb() {
   let raw;
   try {
-    raw = await fs.readFile(DATA_FILE, "utf8");
+    raw = STORAGE_DRIVER === "r2"
+      ? await readR2Object(r2ObjectKey("data.json"))
+      : await fs.readFile(DATA_FILE, "utf8");
+    if (raw === null) return cloneEmptyDb();
     const value = JSON.parse(raw);
     if (!value || typeof value !== "object") throw new Error("Database root must be an object");
     value.apps = Array.isArray(value.apps) ? value.apps : [];
@@ -76,10 +139,43 @@ async function readDb() {
 }
 
 async function persistDb(db) {
+  const payload = JSON.stringify(db, null, 2) + "\n";
+  if (STORAGE_DRIVER === "r2") {
+    await getR2Client().send(new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: r2ObjectKey("data.json"),
+      Body: payload,
+      ContentType: "application/json; charset=utf-8"
+    }));
+    return;
+  }
   const tempPath = DATA_FILE + "." + process.pid + "." + crypto.randomUUID() + ".tmp";
   await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-  await fs.writeFile(tempPath, JSON.stringify(db, null, 2) + "\n", { mode: 0o600 });
+  await fs.writeFile(tempPath, payload, { mode: 0o600 });
   await fs.rename(tempPath, DATA_FILE);
+}
+
+async function storeUploadedFile(filePath, fileName) {
+  if (STORAGE_DRIVER !== "r2") return;
+  const stat = await fs.stat(filePath);
+  await getR2Client().send(new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: r2ObjectKey("uploads/" + path.basename(fileName)),
+    Body: fsSync.createReadStream(filePath),
+    ContentLength: stat.size,
+    ContentType: "application/octet-stream"
+  }));
+}
+
+async function deleteUploadedFile(fileName) {
+  if (STORAGE_DRIVER === "r2") {
+    await getR2Client().send(new DeleteObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: r2ObjectKey("uploads/" + path.basename(String(fileName || "")))
+    }));
+    return;
+  }
+  await fs.unlink(safeUploadPath(fileName));
 }
 
 async function mutateDb(mutator) {
@@ -338,9 +434,25 @@ app.get("/api/download/:buildId", async function (req, res, next) {
       db.stats.downloads = Number(db.stats.downloads || 0) + 1;
     });
     if (!selected) return res.status(404).json({ error: "Published release not found" });
+    const downloadName = path.basename(selected.originalName || "application-package").replace(/[\r\n"\\]/g, "_");
+    if (STORAGE_DRIVER === "r2") {
+      const object = await getR2Client().send(new GetObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: r2ObjectKey("uploads/" + path.basename(selected.fileName))
+      }));
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.setHeader("Content-Disposition", 'attachment; filename="' + downloadName + '"');
+      if (Number.isFinite(Number(object.ContentLength))) res.setHeader("Content-Length", String(object.ContentLength));
+      object.Body.on("error", function (error) {
+        console.error("R2 download stream failed:", error.message);
+        if (!res.headersSent) res.status(500).end("Unable to download package");
+        else res.destroy(error);
+      });
+      return object.Body.pipe(res);
+    }
     const filePath = safeUploadPath(selected.fileName);
     await fs.access(filePath);
-    res.download(filePath, path.basename(selected.originalName || "application-package"), function (error) {
+    res.download(filePath, downloadName, function (error) {
       if (error && !res.headersSent) res.status(500).json({ error: "Unable to download package" });
     });
   } catch (error) {
@@ -471,7 +583,7 @@ app.delete("/api/admin/apps/:appId", requireTrustedOrigin, async function (req, 
       db.builds = db.builds.filter(function (entry) { return entry.appId !== item.id; });
       addAudit(db, "app.deleted", item.name, req.admin.username);
     });
-    await Promise.all(removedFiles.map(function (file) { return fs.unlink(safeUploadPath(file)).catch(function () {}); }));
+    await Promise.all(removedFiles.map(function (file) { return deleteUploadedFile(file).catch(function () {}); }));
     res.json({ ok: true });
   } catch (error) { next(error); }
 });
@@ -493,6 +605,7 @@ app.post("/api/admin/apps/:appId/builds", requireTrustedOrigin, function (req, r
       return res.status(tooLarge ? 413 : 400).json({ error: tooLarge ? "Package exceeds MAX_UPLOAD_MB" : uploadError.message || "Could not upload package" });
     }
     if (!req.file) return res.status(400).json({ error: "Choose a package file to upload" });
+    let storedR2FileName = null;
     try {
       const dbBefore = await readDb();
       const appRecord = dbBefore.apps.find(function (item) { return item.id === req.params.appId; });
@@ -528,6 +641,11 @@ app.post("/api/admin/apps/:appId/builds", requireTrustedOrigin, function (req, r
         createdAt: new Date().toISOString(),
         publishedAt: null
       };
+      await storeUploadedFile(req.file.path, build.fileName);
+      if (STORAGE_DRIVER === "r2") {
+        storedR2FileName = build.fileName;
+        await fs.unlink(req.file.path).catch(function () {});
+      }
       await mutateDb(async function (db) {
         if (!db.apps.some(function (item) { return item.id === appRecord.id; })) throw Object.assign(new Error("Application not found"), { statusCode: 404 });
         db.builds.unshift(build);
@@ -537,6 +655,7 @@ app.post("/api/admin/apps/:appId/builds", requireTrustedOrigin, function (req, r
       res.status(201).json({ build: build });
     } catch (error) {
       await fs.unlink(req.file.path).catch(function () {});
+      if (storedR2FileName) await deleteUploadedFile(storedR2FileName).catch(function () {});
       next(error);
     }
   });
@@ -578,7 +697,7 @@ app.delete("/api/admin/builds/:buildId", requireTrustedOrigin, async function (r
       db.builds = db.builds.filter(function (entry) { return entry.id !== item.id; });
       addAudit(db, "build.deleted", item.originalName, req.admin.username);
     });
-    await fs.unlink(safeUploadPath(fileName)).catch(function () {});
+    await deleteUploadedFile(fileName).catch(function () {});
     res.json({ ok: true });
   } catch (error) { next(error); }
 });
@@ -673,6 +792,8 @@ async function startServer() {
   if (!ADMIN_USERNAME || !ADMIN_PASSWORD || SESSION_SECRET.length < 32) {
     throw new Error("Configure ADMIN_USERNAME, ADMIN_PASSWORD, and SESSION_SECRET (at least 32 characters) before starting the server. See .env.example.");
   }
+  if (!["local", "r2"].includes(STORAGE_DRIVER)) throw new Error("STORAGE_DRIVER must be either local or r2");
+  if (STORAGE_DRIVER === "r2") getR2Client();
   await ensureStorage();
   const port = Number(process.env.PORT || 3000);
   return app.listen(port, "0.0.0.0", function () {

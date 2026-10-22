@@ -2,10 +2,13 @@ services:
   - type: web
     name: app-downloader-server
     runtime: node
+    region: singapore
     plan: starter
+    branch: main
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
+    autoDeployTrigger: commit
     disk:
       name: app-downloader-data
       mountPath: /var/data
@@ -18,7 +21,7 @@ services:
       - key: UPLOAD_DIR
         value: /var/data/uploads
       - key: COOKIE_SAME_SITE
-        value: none
+        value: lax
       - key: SESSION_TTL_HOURS
         value: "12"
       - key: MAX_UPLOAD_MB
@@ -29,5 +32,3 @@ services:
         sync: false
       - key: SESSION_SECRET
         generateValue: true
-      - key: CORS_ORIGINS
-        sync: false

@@ -17,7 +17,7 @@ app.set("trust proxy", 1);
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
-const STORAGE_DRIVER = String(process.env.STORAGE_DRIVER || "local").toLowerCase();
+const STORAGE_DRIVER = String(process.env.STORAGE_DRIVER || (process.env.NODE_ENV === "production" ? "r2" : "local")).toLowerCase();
 const DATA_FILE = path.resolve(process.env.DATA_FILE || path.join(ROOT, "data.json"));
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || path.join(ROOT, "uploads"));
 const R2_BUCKET = process.env.R2_BUCKET || "";

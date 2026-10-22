@@ -2,13 +2,15 @@
   "name": "app-downloader-server",
   "version": "1.0.0",
   "private": true,
-  "description": "Developer portal for building, managing and publishing application releases",
+  "description": "Cross-platform application release portal for Cloudflare Pages/Workers and Render",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node --check server.js && node --check public/script.js && node --check public/admin.js",
-    "test": "node --test && npm run check"
+    "test": "node --test && npm run check",
+    "deploy:pages": "wrangler pages deploy public --project-name app-downloader-server",
+    "deploy:worker": "wrangler deploy --config wrangler.worker.toml"
   },
   "engines": {
     "node": "22.x"
@@ -19,6 +21,7 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
-    "multer": "^2.5.0"
+    "multer": "^2.5.0",
+    "@aws-sdk/client-s3": "^3.850.0"
   }
 }

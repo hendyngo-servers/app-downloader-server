@@ -6,7 +6,7 @@ Hendy Hub là cổng phát hành phần mềm gồm User Portal và Admin Develo
 2. Cloudflare Pages phục vụ giao diện tĩnh và Pages Function chuyển tiếp /api/* sang Render.
 3. Cloudflare Workers (tùy chọn) phục vụ cùng giao diện và proxy API bằng file cấu hình riêng.
 
-Metadata và gói APK/EXE/ZIP được lưu trong Cloudflare R2 khi STORAGE_DRIVER=r2, không nằm trên filesystem tạm của Render Free.
+Metadata và gói APK/EXE/ZIP được lưu trong Cloudflare R2 khi STORAGE_DRIVER=r2. Ở production, nếu quên khai báo STORAGE_DRIVER, server mặc định chọn r2 để tránh lưu nhầm dữ liệu quan trọng vào filesystem tạm của Render Free; vì vậy phải cấu hình đủ 4 biến R2 trước khi khởi chạy.
 
 Repository: https://github.com/hendyngo-servers/app-downloader-server
 
@@ -26,6 +26,7 @@ Repository: https://github.com/hendyngo-servers/app-downloader-server
 - Render Free xử lý API, đăng nhập admin, tạo ứng dụng, upload/publish build, license, thống kê và tải xuống.
 - Cloudflare Pages cung cấp UI ở cùng origin với Pages Function API proxy. Không cần đặt URL API vào public/config.js.
 - Cloudflare Worker có thể thay Pages làm lớp phân phối UI/proxy; dùng wrangler.worker.toml.
+- Lưu ý: Worker/Pages trong bộ mã này là lớp giao diện + proxy API. API nghiệp vụ Node.js/Express vẫn chạy trên Render; không phải bản Express chạy trực tiếp bên trong Workers.
 - Cloudflare R2 lưu data.json và các object uploads/<uuid>.<ext>. R2 giữ dữ liệu qua redeploy/restart và khi Render spin down.
 - Render Free sẽ spin down sau thời gian không có lưu lượng; request đầu tiên có thể chờ service khởi động. Filesystem cục bộ của Render Free là ephemeral, nên không lưu dữ liệu cần giữ trong đó.
 
@@ -45,7 +46,7 @@ Không commit Access Key, Secret Key, mật khẩu admin hoặc session secret v
 ### Với service mới
 
 1. Vào https://dashboard.render.com/blueprints và tạo Blueprint từ repository này, nhánh main.
-2. Blueprint dùng Node.js 22, npm install, npm start, health check /api/health và plan free; không khai báo Persistent Disk.
+2. Blueprint dùng Node.js 22, npm install, npm start, health check /api/health và plan free; không khai báo Persistent Disk. Production mặc định dùng R2 nếu chưa đặt `STORAGE_DRIVER`, nên thiếu R2 credentials sẽ làm server dừng với lỗi cấu hình thay vì âm thầm ghi dữ liệu vào ổ đĩa tạm.
 3. Điền ADMIN_USERNAME và ADMIN_PASSWORD riêng, đủ mạnh. SESSION_SECRET được sinh tự động.
 4. Thêm các biến môi trường sau trong Render → Service → Environment:
 
@@ -98,10 +99,13 @@ Pages chỉ cần BACKEND_ORIGIN. Không đặt R2 secret hoặc mật khẩu ad
 
 Worker độc lập có thể phục vụ thư mục public/ và proxy /api/*.
 
-1. Cài Node.js 22 rồi chạy npm install.
-2. Sửa BACKEND_ORIGIN trong wrangler.worker.toml thành hostname Render thật.
-3. Đăng nhập Wrangler bằng npx wrangler login.
-4. Deploy bằng npm run deploy:worker.
+1. Cài Node.js 22 rồi chạy `npm install`.
+2. Đăng nhập Wrangler bằng `npx wrangler login`.
+3. Trong Cloudflare Dashboard → Workers & Pages → chọn Worker `app-downloader-edge` → Settings → Variables and Secrets, thêm biến `BACKEND_ORIGIN` với URL HTTPS Render thật, ví dụ `https://your-service.onrender.com` (không có dấu `/` cuối). Có thể khai báo biến tương đương trong phần `[vars]` của `wrangler.worker.toml` nếu muốn cấu hình bằng Git.
+4. Deploy bằng `npm run deploy:worker`.
+5. Mở Worker URL và kiểm tra `/`, `/admin.html`, `/api/health`.
+
+Không cần đưa mật khẩu Admin, SESSION_SECRET hay R2 Access Key/Secret vào Worker hoặc thư mục public. Các thông tin lưu trữ và xác thực chỉ nằm trong biến môi trường riêng tư của Render.
 
 Có thể deploy Worker và Pages song song để thử nghiệm, nhưng mỗi domain cần được kiểm tra riêng. Nếu dùng Worker standalone, Worker chỉ cần URL backend; R2 keys chỉ được lưu trong Render vì Render là API writer.
 

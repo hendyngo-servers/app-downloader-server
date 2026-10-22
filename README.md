@@ -62,7 +62,7 @@ Không commit Access Key, Secret Key, mật khẩu admin hoặc session secret v
 | NODE_ENV | production |
 | COOKIE_SAME_SITE | lax |
 | SESSION_TTL_HOURS | 12 |
-| MAX_UPLOAD_MB | 500 |
+| MAX_UPLOAD_MB | 90 (để hạn chế upload qua Cloudflare Free dưới 100 MB) |
 
 Với secret variables, dán giá trị ngay trong Render Dashboard, không ghi vào file YAML.
 
@@ -121,7 +121,7 @@ Kiểm thử bằng npm test.
 - Admin Developer Portal: đăng nhập, quản lý ứng dụng/build, upload và publish release, license, audit log.
 - API: health check, catalog, download, license verify, admin CRUD.
 - Định dạng package: APK, AAB, IPA, ZIP, 7Z, RAR, EXE, MSI, DMG, PKG, AppImage, DEB, RPM, TAR, GZ.
-- Giới hạn upload mặc định 500 MB, cấu hình qua MAX_UPLOAD_MB.
+- Giới hạn server mặc định 500 MB ở local; Render Free đi qua Pages/Workers được đặt 90 MB vì Cloudflare Free giới hạn request body 100 MB. Nếu cần gói lớn hơn, cần triển khai upload trực tiếp lên R2 thay vì đi qua proxy.
 
 ## 7. API chính
 
@@ -140,7 +140,7 @@ Kiểm thử bằng npm test.
 ## 8. Giới hạn Free cần biết
 
 - Render Free tự sleep sau thời gian không có traffic; request đầu tiên sau đó có thể mất khoảng một phút để service chạy lại. Không phải lỗi deploy.
-- Render Free không có Persistent Disk; chỉ dùng thư mục /tmp để tiếp nhận file tạm trong lúc upload.
+- Render Free không có Persistent Disk; chỉ dùng thư mục /tmp để tiếp nhận file tạm trong lúc upload. Cloudflare Workers/Pages Free giới hạn request body tối đa 100 MB, do đó cấu hình Render dùng 90 MB để có khoảng đệm cho multipart overhead.
 - R2 có free tier hàng tháng theo hạn mức Cloudflare, nhưng vượt storage/operation quotas có thể phát sinh phí. Theo dõi Usage & Billing của tài khoản.
 - Một JSON object trên R2 phù hợp MVP nhỏ; nên chuyển metadata sang D1/Postgres khi cần concurrency, query nâng cao hoặc nhiều API instances.
 

@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: app-downloader-server
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: app-downloader-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_FILE
+        value: /var/data/data.json
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: SESSION_TTL_HOURS
+        value: "12"
+      - key: MAX_UPLOAD_MB
+        value: "500"
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false

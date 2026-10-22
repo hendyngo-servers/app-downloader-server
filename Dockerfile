@@ -7,11 +7,11 @@ COPY package.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
 COPY --chown=node:node . .
-RUN mkdir -p /var/data/uploads && chown -R node:node /var/data /app
+RUN mkdir -p /tmp/app-downloader/uploads && chown -R node:node /app /tmp/app-downloader
 
-ENV DATA_FILE=/var/data/data.json
-ENV UPLOAD_DIR=/var/data/uploads
+ENV DATA_FILE=/tmp/app-downloader/data.json
+ENV UPLOAD_DIR=/tmp/app-downloader/uploads
+
 EXPOSE 3000
-
 USER node
 CMD ["npm", "start"]

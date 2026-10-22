@@ -381,7 +381,7 @@ app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: "draft-7", legacyHeaders: false }));
 
 app.get("/api/health", function (req, res) {
-  res.json({ ok: true, service: "app-downloader-server", time: new Date().toISOString() });
+  res.json({ ok: true, service: "app-downloader-server", storage: STORAGE_DRIVER, time: new Date().toISOString() });
 });
 
 app.get("/api/stats/public", async function (req, res, next) {
@@ -440,8 +440,8 @@ app.get("/api/download/:buildId", async function (req, res, next) {
         Bucket: R2_BUCKET,
         Key: r2ObjectKey("uploads/" + path.basename(selected.fileName))
       }));
-      res.setHeader("Content-Type", "application/octet-stream");
-      res.setHeader("Content-Disposition", 'attachment; filename="' + downloadName + '"');
+      res.attachment(downloadName);
+      res.type("application/octet-stream");
       if (Number.isFinite(Number(object.ContentLength))) res.setHeader("Content-Length", String(object.ContentLength));
       object.Body.on("error", function (error) {
         console.error("R2 download stream failed:", error.message);

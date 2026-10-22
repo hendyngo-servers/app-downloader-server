@@ -3,23 +3,23 @@ services:
     name: app-downloader-server
     runtime: node
     region: singapore
-    plan: starter
+    plan: free
     branch: main
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
-    disk:
-      name: app-downloader-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
+      - key: STORAGE_DRIVER
+        value: r2
       - key: DATA_FILE
-        value: /var/data/data.json
+        value: /tmp/app-downloader/data.json
       - key: UPLOAD_DIR
-        value: /var/data/uploads
+        value: /tmp/app-downloader/uploads
+      - key: R2_PREFIX
+        value: app-downloader-server
       - key: COOKIE_SAME_SITE
         value: lax
       - key: SESSION_TTL_HOURS
@@ -32,3 +32,11 @@ services:
         sync: false
       - key: SESSION_SECRET
         generateValue: true
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false

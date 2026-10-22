@@ -260,7 +260,8 @@ app.use(helmet({
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
       imgSrc: ["'self'", "data:", "https:"],
-      styleSrc: ["'self'"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       scriptSrc: ["'self'"],
       connectSrc: ["'self'", "https:"],
       upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null

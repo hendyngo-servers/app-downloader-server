@@ -1,0 +1,4 @@
+# Cloudflare Pages static frontend configuration.
+# The Express API and persistent uploads still run on Render (or another backend).
+name = "app-downloader-server"
+pages_build_output_dir = "./public"

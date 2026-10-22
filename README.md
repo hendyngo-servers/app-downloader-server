@@ -156,7 +156,7 @@ Các endpoint /api/admin/* (ngoại trừ login) yêu cầu session cookie đã 
 - Dùng đúng một instance khi đang dùng JSON file; không bật autoscaling với JSON store. Với tải cao, chuyển metadata sang PostgreSQL và package sang Cloudflare R2/S3-compatible object storage.
 - Render persistent disk là phần quan trọng để giữ package qua lần deploy/restart; kiểm tra quota disk định kỳ.
 - License verify hiện kiểm tra code, status và expiry. Theo dõi thiết bị, quota activation thực tế, thanh toán và chống chia sẻ license cần một activation API đầy đủ.
-- CI hiện kiểm tra cú pháp JavaScript. Trước khi phát hành công khai, nên bổ sung integration tests cho login, upload/download và kiểm thử bảo mật trong môi trường staging.
+- CI chạy integration smoke test cho health check, session admin, tạo app, upload/publish/download package, license verify và kiểm tra cú pháp JavaScript. Trước khi phát hành công khai, vẫn nên bổ sung kiểm thử bảo mật và tải cao trong môi trường staging.
 - Không lưu mật khẩu, API key, cookie session, access token hay file người dùng nhạy cảm trong GitHub.
 
 ## License

@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const multer = require("multer");
 const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
+const fsSync = require("node:fs");
 const path = require("node:path");
 
 const app = express();
@@ -500,8 +501,12 @@ app.post("/api/admin/apps/:appId/builds", requireTrustedOrigin, function (req, r
         return res.status(404).json({ error: "Application not found" });
       }
       const hash = crypto.createHash("sha256");
-      const fileBuffer = await fs.readFile(req.file.path);
-      hash.update(fileBuffer);
+      await new Promise(function (resolve, reject) {
+        const stream = fsSync.createReadStream(req.file.path);
+        stream.on("data", function (chunk) { hash.update(chunk); });
+        stream.on("error", reject);
+        stream.on("end", resolve);
+      });
       const version = cleanText(req.body.version, 40);
       if (!version) {
         await fs.unlink(req.file.path).catch(function () {});

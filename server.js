@@ -681,8 +681,35 @@ async function startServer() {
 }
 
 if (require.main === module) {
-  startServer().catch(function (error) {
-    console.error(error.message);
+  let httpServer;
+  let shuttingDown = false;
+
+  async function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log("Received " + signal + "; closing HTTP server...");
+    if (!httpServer) return process.exit(0);
+
+    const forceExit = setTimeout(function () {
+      console.error("Graceful shutdown timed out; forcing exit.");
+      process.exit(1);
+    }, 25000);
+    forceExit.unref();
+
+    httpServer.close(function () {
+      clearTimeout(forceExit);
+      console.log("HTTP server closed.");
+      process.exit(0);
+    });
+  }
+
+  process.once("SIGTERM", function () { shutdown("SIGTERM"); });
+  process.once("SIGINT", function () { shutdown("SIGINT"); });
+
+  startServer().then(function (server) {
+    httpServer = server;
+  }).catch(function (error) {
+    console.error("Startup failed:", error.message);
     process.exit(1);
   });
 }

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b16">
+  <meta name="description" content="Hendy App Hub — khám phá, tải xuống và cập nhật phần mềm từ nhà phát triển.">
+  <title>Hendy App Hub — Software, Delivered</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/config.js"></script>
+  <script defer src="/script.js"></script>
+</head>
+<body class="site-body">
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Hendy App Hub homepage">
+      <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
+      <span class="brand-copy"><b>HENDY<span>HUB</span></b><small>SOFTWARE DISTRIBUTION</small></span>
+    </a>
+    <nav class="topnav" aria-label="Main navigation">
+      <a class="nav-link is-active" href="#discover">Khám phá</a>
+      <a class="nav-link" href="#releases">Bản phát hành</a>
+      <a class="nav-link" href="#about">Nền tảng</a>
+    </nav>
+    <div class="top-actions">
+      <span class="status-pill"><i></i> SYSTEM ONLINE</span>
+      <a class="button button-ghost button-small" href="/admin.html"><span class="button-icon">⌘</span> Developer Portal</a>
+    </div>
+    <button class="mobile-menu" id="mobile-menu" aria-label="Mở menu" aria-expanded="false">☰</button>
+  </header>
+
+  <main>
+    <section class="hero shell" id="discover">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-line"></span> THE DEVELOPER-POWERED APP HUB <span class="eyebrow-version">V1.0</span></div>
+        <h1>Phần mềm tốt.<br><span class="gradient-text">Phân phối thông minh.</span></h1>
+        <p class="hero-description">Khám phá công cụ, ứng dụng và bản phát hành mới nhất. Tải xuống trực tiếp từ cổng phân phối do nhà phát triển quản lý.</p>
+        <div class="hero-search">
+          <span class="search-symbol">⌕</span>
+          <input id="search-input" type="search" placeholder="Tìm ứng dụng, công cụ, phiên bản..." aria-label="Tìm kiếm ứng dụng">
+          <kbd>ENTER</kbd>
+        </div>
+        <div class="hero-meta"><span class="meta-check">✓</span> Bản phát hành được quản lý <span class="meta-divider">/</span> <span class="meta-check">✓</span> Kiểm tra checksum SHA-256</div>
+      </div>
+      <div class="hero-visual" aria-label="Abstract app distribution illustration">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="hero-core">
+          <div class="core-grid"></div>
+          <div class="core-logo"><span class="core-corner corner-tl"></span><span class="core-corner corner-tr"></span><span class="core-corner corner-bl"></span><span class="core-corner corner-br"></span><span class="core-glyph">H</span></div>
+          <div class="core-caption"><span>RELEASE ENGINE</span><b>READY TO SHIP</b></div>
+        </div>
+        <div class="float-card float-card-top"><span class="float-icon purple">↗</span><div><small>DELIVERY STATUS</small><b>Edge optimized</b></div><span class="float-live"></span></div>
+        <div class="float-card float-card-bottom"><span class="float-icon mint">✓</span><div><small>INTEGRITY CHECK</small><b>SHA-256 verified</b></div></div>
+        <div class="visual-coordinate">10°46' N / EDGE NETWORK</div>
+      </div>
+    </section>
+
+    <section class="metrics shell" aria-label="Platform statistics">
+      <div class="metric-item"><span class="metric-icon">▦</span><div><strong id="stat-apps">—</strong><small>ỨNG DỤNG</small></div></div>
+      <div class="metric-item"><span class="metric-icon mint-text">↗</span><div><strong id="stat-releases">—</strong><small>BẢN PHÁT HÀNH</small></div></div>
+      <div class="metric-item"><span class="metric-icon violet-text">⇩</span><div><strong id="stat-downloads">—</strong><small>LƯỢT TẢI XUỐNG</small></div></div>
+      <div class="metric-live"><i></i><span><b>RELEASE CHANNEL</b><small>Phân phối công khai</small></span><span class="live-arrow">↗</span></div>
+    </section>
+
+    <section class="catalog-section shell" id="releases">
+      <div class="section-heading">
+        <div><div class="section-kicker">THE CATALOG <span>01 / 03</span></div><h2>Ứng dụng nổi bật<span class="title-dot">.</span></h2><p class="section-subtitle">Những công cụ mới nhất từ hệ sinh thái nhà phát triển.</p></div>
+        <div class="catalog-controls"><label for="sort-select">SẮP XẾP</label><select id="sort-select"><option value="newest">Mới cập nhật</option><option value="name">Tên A–Z</option><option value="downloads">Phổ biến</option></select></div>
+      </div>
+      <div class="filter-row" id="category-filters" aria-label="Lọc danh mục">
+        <button class="filter-chip is-active" data-category="all">Tất cả <span>⌁</span></button>
+        <button class="filter-chip" data-category="Tools">Công cụ</button>
+        <button class="filter-chip" data-category="Productivity">Năng suất</button>
+        <button class="filter-chip" data-category="Developer">Developer</button>
+        <button class="filter-chip" data-category="Media">Media</button>
+        <button class="filter-chip" data-category="Utilities">Tiện ích</button>
+      </div>
+      <div class="app-grid" id="app-grid" aria-live="polite">
+        <div class="loading-card"><span class="loading-orb"></span><b>Đang kết nối release channel...</b><small>Đang tải danh mục ứng dụng</small></div>
+        <div class="loading-card loading-card-muted"><span class="loading-orb"></span><b>Đồng bộ phiên bản</b><small>Kiểm tra dữ liệu công khai</small></div>
+        <div class="loading-card loading-card-muted"><span class="loading-orb"></span><b>Chờ bản phát hành</b><small>Ứng dụng sẽ xuất hiện tại đây</small></div>
+      </div>
+      <div class="catalog-footer"><span><i class="footer-pulse"></i> LIVE CATALOG</span><span id="catalog-count">Đang đồng bộ danh mục...</span></div>
+    </section>
+
+    <section class="release-strip shell" id="about">
+      <div class="release-strip-copy"><span class="strip-tag">BUILT FOR SHIP</span><h2>Từ bản build đến<br><span class="gradient-text">bản phát hành.</span></h2><p>Developer Portal dành riêng cho quản lý ứng dụng, tải gói cài đặt, theo dõi phiên bản và cấp license.</p><a class="text-link" href="/admin.html">Mở Developer Portal <span>↗</span></a></div>
+      <div class="pipeline">
+        <div class="pipeline-step"><span class="pipeline-number">01</span><span class="pipeline-icon">⌘</span><div><b>BUILD</b><small>Upload package</small></div><span class="pipeline-state">READY</span></div>
+        <div class="pipeline-connector"><i></i></div>
+        <div class="pipeline-step"><span class="pipeline-number">02</span><span class="pipeline-icon pipeline-icon-mint">◈</span><div><b>VERIFY</b><small>SHA-256 integrity</small></div><span class="pipeline-state">CHECK</span></div>
+        <div class="pipeline-connector"><i></i></div>
+        <div class="pipeline-step"><span class="pipeline-number">03</span><span class="pipeline-icon pipeline-icon-purple">↗</span><div><b>PUBLISH</b><small>Release to users</small></div><span class="pipeline-state state-live">LIVE</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer shell"><a class="brand brand-footer" href="/"><span class="brand-mark"><span></span><span></span><span></span><span></span></span><span class="brand-copy"><b>HENDY<span>HUB</span></b><small>SOFTWARE DISTRIBUTION</small></span></a><span>© <span id="current-year"></span> HENDY HUB <span class="footer-separator">/</span> BUILT TO SHIP</span><a href="/admin.html">Developer access ↗</a></footer>
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+</body>
+</html>

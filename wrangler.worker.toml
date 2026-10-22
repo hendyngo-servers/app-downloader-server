@@ -1,4 +1,7 @@
-# Standalone Worker + static assets. Update BACKEND_ORIGIN before deploying.
+# Standalone Cloudflare Worker with static assets and API proxy.
+# Set BACKEND_ORIGIN in Workers & Pages > app-downloader-edge > Settings > Variables
+# to the HTTPS URL of the deployed Render service, without a trailing slash.
+# Example value: https://your-service.onrender.com
 name = "app-downloader-edge"
 main = "worker/index.mjs"
 compatibility_date = "2026-10-22"
@@ -8,6 +11,3 @@ workers_dev = true
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = ["/api/*", "/api"]
-
-[vars]
-BACKEND_ORIGIN = "https://REPLACE-WITH-YOUR-RENDER-SERVICE.onrender.com"

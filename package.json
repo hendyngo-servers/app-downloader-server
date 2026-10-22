@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check worker/index.mjs && node --check public/script.js && node --check public/admin.js",
+    "check": "node --check server.js && node --check worker/index.mjs && node --check \"functions/api/[[path]].js\" && node --check public/script.js && node --check public/admin.js",
     "test": "node --test && npm run check",
     "deploy:pages": "npx wrangler pages deploy public --project-name app-downloader-server",
     "deploy:worker": "npx wrangler deploy --config wrangler.worker.toml"

@@ -30,7 +30,7 @@ jobs:
       - name: Check whether GitHub Pages is enabled
         id: pages-status
         env:
-          GH_TOKEN: ${"$"}{{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           status="$(curl -sS -o "$RUNNER_TEMP/pages.json" -w "%{http_code}" \
             -H "Accept: application/vnd.github+json" \

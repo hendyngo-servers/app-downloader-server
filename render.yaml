@@ -25,7 +25,7 @@ services:
       - key: SESSION_TTL_HOURS
         value: "12"
       - key: MAX_UPLOAD_MB
-        value: "500"
+        value: "90"
       - key: ADMIN_USERNAME
         sync: false
       - key: ADMIN_PASSWORD

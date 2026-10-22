@@ -1,164 +1,151 @@
-# App Downloader Server — Hendy Hub
+# App Downloader Server — Render Web Service
 
-Developer portal để **quản lý ứng dụng, tải lên gói build, xuất bản release và quản lý license**, với hai giao diện tách biệt:
-
-- **User Portal:** catalog ứng dụng công khai, tìm kiếm/lọc, thông tin phiên bản, checksum SHA-256 và tải gói đã xuất bản.
-- **Admin Developer Portal:** đăng nhập riêng, tạo/sửa/ẩn ứng dụng, upload package, publish/unpublish build, quản lý license và xem audit log.
+Hendy Hub là ứng dụng Node.js + Express được thiết kế để chạy như **một Render Web Service duy nhất**. Cùng một domain phục vụ website công khai, trang quản trị, API, upload gói phát hành và tải xuống.
 
 Repository: https://github.com/hendyngo-servers/app-downloader-server
 
-## 1. Cấu trúc
+## 1. Hai giao diện trên cùng Web Service
+
+- User Portal: trang chủ tại / — tìm kiếm/lọc ứng dụng, xem phiên bản đã xuất bản, checksum SHA-256 và tải gói phát hành.
+- Admin Developer Portal: trang /admin.html — đăng nhập admin, quản lý ứng dụng/build/license, publish release và xem audit log.
+- API: các endpoint bắt đầu bằng /api.
+- Health check: /api/health — dùng cho Render kiểm tra tình trạng Web Service.
+
+Không cần cấu hình API domain riêng. public/config.js để API_BASE_URL là chuỗi rỗng để frontend dùng cùng origin với Express.
+
+## 2. Cấu trúc dự án
 
     app-downloader-server/
-    ├── uploads/                   # Gói build (không commit binary)
     ├── public/
-    │   ├── index.html              # Giao diện người dùng
-    │   ├── admin.html              # Admin Developer Portal
-    │   ├── style.css               # Glassmorphism / Cyber Neon / responsive
-    │   ├── script.js               # Logic giao diện user
-    │   ├── admin.js                # Logic giao diện admin
-    │   ├── config.js               # API base URL công khai (không chứa secret)
-    │   └── _headers                # Header bảo vệ khi chạy Cloudflare Pages
-    ├── data.json                   # Metadata apps/builds/licenses/stats/audit
-    ├── server.js                   # API Express, auth, upload và download
+    │   ├── index.html       # User Portal
+    │   ├── admin.html       # Admin Developer Portal
+    │   ├── style.css        # Glassmorphism / Cyber Neon / responsive
+    │   ├── script.js        # Client logic User Portal
+    │   ├── admin.js         # Admin UI logic
+    │   └── config.js        # API cùng origin, không chứa secrets
+    ├── uploads/             # Gói build khi chạy local
+    ├── data.json            # Metadata mẫu ban đầu
+    ├── tests/
+    │   └── server.test.js   # Integration smoke test
+    ├── server.js            # Express web server + API
     ├── package.json
-    ├── render.yaml                 # Blueprint Render + persistent disk
-    ├── Dockerfile
-    ├── wrangler.toml               # Cloudflare Pages static output
-    └── .github/workflows/          # CI + GitHub Pages deploy
+    ├── .node-version        # Node.js 22
+    ├── render.yaml          # Render Web Service + persistent disk
+    └── Dockerfile
 
-Không thêm file .apk, .exe, .zip lớn vào Git. Package được upload qua Admin Portal và lưu trong UPLOAD_DIR.
+Không commit package thật như APK, EXE hoặc ZIP lên GitHub. Upload file thông qua Admin Portal.
 
-## 2. Chạy local trên Windows
+## 3. Deploy bằng Render Blueprint (khuyến nghị)
 
-Cần Node.js 20+ (khuyến nghị Node.js 22).
+Repository đã có render.yaml cấu hình một Web Service, lệnh chạy, health check, các biến môi trường và disk cho dữ liệu upload.
 
-Mở CMD/PowerShell trong thư mục dự án:
+1. Mở Render Dashboard: https://dashboard.render.com/blueprints
+2. Chọn tạo Blueprint mới và kết nối repository hendyngo-servers/app-downloader-server.
+3. Chọn nhánh main và xác nhận cấu hình render.yaml.
+4. Khi Render yêu cầu giá trị cho ADMIN_USERNAME và ADMIN_PASSWORD, đặt tên đăng nhập và mật khẩu riêng, đủ mạnh. Không dùng lại mật khẩu của các dịch vụ khác.
+5. SESSION_SECRET được sinh tự động bởi Blueprint.
+6. Hoàn tất quá trình tạo Blueprint và theo dõi Deploys/Logs đến khi deploy thành công.
+
+Cấu hình dịch vụ hiện dùng region Singapore, Node.js 22, build command npm install, start command npm start và health check /api/health. Mỗi commit mới trên main sẽ kích hoạt deploy tự động.
+
+Sau khi deploy, sử dụng URL mà Render cung cấp:
+- Website người dùng: https://<service>.onrender.com/
+- Quản trị: https://<service>.onrender.com/admin.html
+- Health check: https://<service>.onrender.com/api/health
+
+Thay <service> bằng hostname thực tế do Render cấp; hostname chưa được biết trước khi tạo service.
+
+## 4. Lưu dữ liệu và chi phí Render
+
+render.yaml gắn persistent disk 1 GB tại /var/data. Backend ghi:
+- Metadata vào /var/data/data.json.
+- Package đã upload vào /var/data/uploads.
+
+Để giữ file upload và dữ liệu qua các lần deploy/restart, cần một Render Web Service plan hỗ trợ persistent disk. Persistent disk không phải bộ nhớ dùng chung nhiều instance; giữ dịch vụ ở một instance khi đang sử dụng JSON file và disk cục bộ.
+
+Nếu bạn chọn gói không hỗ trợ disk, đừng bỏ qua bước lưu trữ: filesystem thông thường của service có thể bị làm mới khi deploy/restart, khiến uploads và dữ liệu JSON mất đi. Trong trường hợp cần chạy gói miễn phí hoặc mở rộng nhiều instance, nên thay JSON file bằng PostgreSQL và lưu package trên Cloudflare R2/S3-compatible object storage trước khi phát hành thật.
+
+## 5. Nếu tạo Web Service thủ công (không dùng Blueprint)
+
+Vào Render Dashboard → New → Web Service và chọn repository này, nhánh main. Cấu hình:
+- Runtime: Node
+- Build Command: npm install
+- Start Command: npm start
+- Health Check Path: /api/health
+- Node version: 22 (repository có .node-version và engines.node)
+- Attach persistent disk mount path /var/data, dung lượng phù hợp.
+
+Tạo các biến môi trường:
+- NODE_ENV = production
+- DATA_FILE = /var/data/data.json
+- UPLOAD_DIR = /var/data/uploads
+- COOKIE_SAME_SITE = lax
+- SESSION_TTL_HOURS = 12
+- MAX_UPLOAD_MB = 500
+- ADMIN_USERNAME = tên đăng nhập quản trị do bạn tự đặt
+- ADMIN_PASSWORD = mật khẩu quản trị mạnh do bạn tự đặt
+- SESSION_SECRET = chuỗi ngẫu nhiên tối thiểu 32 ký tự
+
+Không cần CORS_ORIGINS khi User Portal, Admin Portal và API đều được phục vụ từ cùng Web Service/domain. Nếu sau này tách giao diện ra domain riêng, cần cấu hình lại CORS, cookie SameSite và domain HTTPS tương ứng.
+
+## 6. Chạy local trên Windows
+
+Cần Node.js 22 trở lên. Từ CMD/PowerShell trong thư mục dự án:
 
     npm install
     Copy-Item .env.example .env
 
-Mở file .env, thay ADMIN_PASSWORD bằng mật khẩu mạnh và SESSION_SECRET bằng chuỗi ngẫu nhiên tối thiểu 32 ký tự. Có thể tạo secret bằng:
+Sửa .env, đặt ADMIN_USERNAME, ADMIN_PASSWORD và SESSION_SECRET (tối thiểu 32 ký tự). Để tạo secret ngẫu nhiên, chạy:
 
     node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
-Khởi động:
+Sau đó:
 
     npm start
 
-Truy cập:
-- User Portal: http://localhost:3000/
-- Admin Portal: http://localhost:3000/admin.html
-- Health check: http://localhost:3000/api/health
+Mở http://localhost:3000/ hoặc http://localhost:3000/admin.html. Kiểm thử bằng npm test.
 
-Kiểm tra cú pháp:
+## 7. Quy trình xuất bản phần mềm
 
-    npm test
+1. Truy cập /admin.html và đăng nhập.
+2. Tạo ứng dụng.
+3. Vào Bản build, chọn ứng dụng, version, platform và package.
+4. Upload package; server tính SHA-256 checksum.
+5. Build mới bắt đầu ở trạng thái draft.
+6. Kiểm tra file/phiên bản/release notes rồi bấm Publish.
+7. Bản phát hành đã publish sẽ xuất hiện trên User Portal và có đường dẫn tải xuống công khai.
 
-## 3. Deploy backend lên Render
-
-1. Mở Render Dashboard và chọn **New → Blueprint**.
-2. Chọn repository hendyngo-servers/app-downloader-server, dùng render.yaml.
-3. Khi được yêu cầu, đặt ADMIN_USERNAME và ADMIN_PASSWORD. Không đưa các giá trị này vào repository.
-4. Render Blueprint định nghĩa một web service Node.js và persistent disk tại /var/data. Dữ liệu được lưu ở /var/data/data.json, package tại /var/data/uploads.
-5. Sau khi deploy, kiểm tra URL dạng https://your-service.onrender.com/api/health.
-
-Các biến môi trường quan trọng:
-- ADMIN_USERNAME, ADMIN_PASSWORD: tài khoản quản trị.
-- SESSION_SECRET: bí mật ký session; Blueprint tạo giá trị ngẫu nhiên.
-- DATA_FILE=/var/data/data.json, UPLOAD_DIR=/var/data/uploads: dùng persistent disk, tránh mất package khi redeploy.
-- CORS_ORIGINS: danh sách origin của frontend tách riêng, phân cách bằng dấu phẩy; ví dụ https://your-site.pages.dev.
-- COOKIE_SAME_SITE=none: cần khi Admin Portal và API ở hai site khác nhau; chỉ dùng qua HTTPS.
-- MAX_UPLOAD_MB: giới hạn dung lượng mỗi package (mặc định 500 MB).
-
-Nếu dùng giao diện cùng host Render, hãy để public/config.js với API_BASE_URL là chuỗi rỗng và có thể cấu hình cookie lax. Khi frontend được host ở domain khác, dùng COOKIE_SAME_SITE=none và điền chính xác origin trong CORS_ORIGINS.
-
-## 4. Deploy giao diện lên Cloudflare Pages
-
-Cloudflare Pages phù hợp để host **hai trang tĩnh**; Express API, đăng nhập admin, JSON data và uploads vẫn cần backend riêng (ví dụ Render).
-
-1. Trong Cloudflare Dashboard chọn **Workers & Pages → Create → Pages → Connect to Git**.
-2. Chọn repository này.
-3. Build command: để trống (hoặc lệnh no-op được Cloudflare hỗ trợ).
-4. Build output directory: public.
-5. Trước/sau lần deploy đầu, sửa public/config.js để trỏ đến backend Render:
-
-    window.APP_CONFIG = {
-      API_BASE_URL: "https://your-service.onrender.com"
-    };
-
-6. Commit thay đổi này. Trên Render đặt CORS_ORIGINS là origin Pages thực tế, ví dụ https://your-project.pages.dev (không thêm đường dẫn), cùng COOKIE_SAME_SITE=none.
-7. Truy cập https://your-project.pages.dev/ và https://your-project.pages.dev/admin.html.
-
-API base URL không phải secret. Tuyệt đối không đặt admin password, session secret hay token trong public/config.js.
-
-Có thể dùng Cloudflare R2 để lưu package ở bước nâng cấp tiếp theo; bản hiện tại lưu file trên persistent disk của Render, chưa tự cấu hình bucket R2.
-
-## 5. Deploy giao diện lên GitHub Pages
-
-Workflow .github/workflows/pages.yml publish thư mục public sau push lên main. Trong GitHub vào **Settings → Pages → Build and deployment → Source: GitHub Actions** nếu repository chưa được cấu hình. Xem kết quả tại tab **Actions**.
-
-Để GitHub Pages gọi API Render, sửa public/config.js với API_BASE_URL của backend và thêm origin GitHub Pages vào CORS_ORIGINS. Với project site, origin thường là https://your-owner.github.io (origin không bao gồm /app-downloader-server/). Giao diện dùng đường dẫn tương đối cho asset để tương thích với đường dẫn con.
-
-GitHub Pages chỉ host static HTML/CSS/JS, không chạy server.js, không lưu data.json, không xử lý upload hoặc bảo vệ API. Không thể triển khai toàn bộ backend Express chỉ bằng GitHub Pages.
-
-## 6. Docker
-
-    docker build -t app-downloader-server .
-    docker run --rm -p 3000:3000 \
-      -e NODE_ENV=production \
-      -e ADMIN_USERNAME=developer \
-      -e ADMIN_PASSWORD='replace-with-a-long-unique-password' \
-      -e SESSION_SECRET='replace-with-at-least-32-random-characters' \
-      -v app-downloader-data:/var/data \
-      app-downloader-server
-
-Khi dùng Docker, luôn cấp secret qua secret manager hoặc môi trường runtime, không bake vào image. Dữ liệu được mount tại /var/data.
-
-## 7. Quy trình phát hành
-
-1. Mở /admin.html và đăng nhập.
-2. Tạo ứng dụng trong mục **Ứng dụng**.
-3. Sang **Bản build → Tải bản build**, chọn ứng dụng, phiên bản, nền tảng và file package.
-4. Upload mặc định tạo build ở trạng thái draft; server tính checksum SHA-256.
-5. Kiểm tra version, file và release notes, sau đó bấm **Publish**.
-6. Ứng dụng/build đã publish xuất hiện ở User Portal và có đường dẫn tải công khai.
-7. License được tạo ở mục **License**; mã mới chỉ được hiển thị sau khi tạo, hãy lưu an toàn.
-
-Các định dạng upload hiện cho phép gồm APK/AAB/IPA, ZIP/7Z/RAR, EXE/MSI, DMG/PKG, AppImage, DEB/RPM, TAR/GZ. Có thể điều chỉnh ALLOWED_EXTENSIONS trong server.js.
+Định dạng được phép upload hiện gồm APK, AAB, IPA, ZIP, 7Z, RAR, EXE, MSI, DMG, PKG, AppImage, DEB, RPM, TAR và GZ. Giới hạn kích thước mặc định 500 MB, cấu hình qua MAX_UPLOAD_MB.
 
 ## 8. API chính
 
 | Method | Endpoint | Mục đích |
 | --- | --- | --- |
-| GET | /api/health | Health check |
+| GET | /api/health | Health check Render |
 | GET | /api/stats/public | Thống kê công khai |
-| GET | /api/apps | Danh mục ứng dụng đã publish |
-| GET | /api/apps/:appId | Chi tiết ứng dụng công khai |
-| GET | /api/download/:buildId | Tải gói đã publish |
-| POST | /api/license/verify | Kiểm tra trạng thái/thời hạn license |
+| GET | /api/apps | Ứng dụng đã xuất bản |
+| GET | /api/apps/:appId | Chi tiết ứng dụng |
+| GET | /api/download/:buildId | Tải package đã xuất bản |
+| POST | /api/license/verify | Kiểm tra trạng thái và hạn license |
 | POST | /api/admin/login | Đăng nhập admin |
 | POST | /api/admin/logout | Đăng xuất |
-| GET | /api/admin/overview | Dashboard stats |
-| GET/POST/PATCH/DELETE | /api/admin/apps và /api/admin/apps/:appId | CRUD ứng dụng |
-| GET | /api/admin/builds | Danh sách build |
-| POST | /api/admin/apps/:appId/builds | Upload package (multipart/form-data, field package) |
+| GET | /api/admin/overview | Thống kê dashboard |
+| GET/POST/PATCH/DELETE | /api/admin/apps, /api/admin/apps/:appId | Quản lý ứng dụng |
+| GET | /api/admin/builds | Liệt kê build |
+| POST | /api/admin/apps/:appId/builds | Upload package |
 | PATCH/DELETE | /api/admin/builds/:buildId | Publish hoặc xóa build |
-| GET/POST | /api/admin/licenses | Danh sách/tạo license |
+| GET/POST | /api/admin/licenses | Liệt kê/tạo license |
 | PATCH | /api/admin/licenses/:licenseId | Activate/suspend/revoke |
 | GET | /api/admin/audit | Audit log |
 
-Các endpoint /api/admin/* (ngoại trừ login) yêu cầu session cookie đã ký. API kiểm tra origin cho các thao tác thay đổi dữ liệu, giới hạn tốc độ request, giới hạn file upload và chỉ cho tải xuống build công khai.
+## 9. Kiểm thử tự động và giới hạn
 
-## 9. Giới hạn và khuyến nghị production
+GitHub Actions chạy smoke test trên API: health check, xác thực admin, tạo ứng dụng, upload và publish package, tải file, tạo/xác minh license và thống kê. Workflow CI kiểm tra cú pháp JavaScript.
 
-- data.json là kho dữ liệu đơn giản, phù hợp MVP hoặc một instance. Cơ chế ghi dùng file tạm và rename, nhưng **không thay thế database giao dịch** cho triển khai nhiều instance/ nhiều tiến trình.
-- Dùng đúng một instance khi đang dùng JSON file; không bật autoscaling với JSON store. Với tải cao, chuyển metadata sang PostgreSQL và package sang Cloudflare R2/S3-compatible object storage.
-- Render persistent disk là phần quan trọng để giữ package qua lần deploy/restart; kiểm tra quota disk định kỳ.
-- License verify hiện kiểm tra code, status và expiry. Theo dõi thiết bị, quota activation thực tế, thanh toán và chống chia sẻ license cần một activation API đầy đủ.
-- CI chạy integration smoke test cho health check, session admin, tạo app, upload/publish/download package, license verify và kiểm tra cú pháp JavaScript. Trước khi phát hành công khai, vẫn nên bổ sung kiểm thử bảo mật và tải cao trong môi trường staging.
-- Không lưu mật khẩu, API key, cookie session, access token hay file người dùng nhạy cảm trong GitHub.
+Đây là nền tảng MVP đã có quy trình phát hành cơ bản, chưa phải nền tảng build mã nguồn trực tiếp. License verify hiện kiểm tra code, trạng thái và thời hạn; chưa thực thi giới hạn kích hoạt theo thiết bị, thanh toán hoặc quản lý quyền nâng cao.
 
-## License
+Với dữ liệu quan trọng hoặc lượng tải lớn, hãy chuyển metadata sang PostgreSQL và package sang R2/S3-compatible object storage. JSON file trên một disk không phù hợp để mở rộng nhiều instance. Trước khi phân phối công khai, kiểm thử upload/download lớn, backup/restore, phân quyền và chính sách license trên môi trường staging.
 
-Chưa chỉ định license nguồn mở. Hãy thêm file LICENSE phù hợp trước khi phân phối mã nguồn theo giấy phép cụ thể.
+## Bảo mật
+
+Không commit .env, admin password, session secret, API keys hoặc tokens. Sử dụng Environment Variables/Secrets trong Render Dashboard. Tài khoản admin production nên là tài khoản riêng với mật khẩu mạnh.
